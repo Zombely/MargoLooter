@@ -1,4 +1,4 @@
-# MargoLogger
+# MargoLooter
 
 ## Description
 
