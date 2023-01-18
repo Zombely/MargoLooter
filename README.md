@@ -2,8 +2,12 @@
 
 ## Description
 
-Logger for showing item drops from monsters in game `margonem`.
+Looter logger for showing item drops from monsters in game `margonem`.
 Collecting user data from obtaining loot.
+
+## Set up
+
+`pip install -r requirements.txt`
 
 ## Main sites
 
@@ -13,5 +17,5 @@ Collecting user data from obtaining loot.
 
 ## Stack
 
-- Python 3.8.5
+- Python 3.10.9
 - Javascript
