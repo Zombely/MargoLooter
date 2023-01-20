@@ -73,7 +73,7 @@ def main():
     for element_index, element_a in enumerate(pbar):
         soup_items = BeautifulSoup(requests.get(MAIN_URL + element_a['href']).text, features="lxml")
         items_tags = soup_items.find_all("a", {"href": re.compile("\/przedmiot\/.*")})
-        for item_index, item in enumerate(items_tags[:1]):
+        for item_index, item in enumerate(items_tags):
             pbar.set_description(f"Profession: {element_a['href'].split('/')[-2]}, Item Type: {element_a.text}, Item count: {item_index+1}/{len(items_tags)}")
             time.sleep(0.5)
             data_dict = get_item_data(MAIN_URL + item['href'])
