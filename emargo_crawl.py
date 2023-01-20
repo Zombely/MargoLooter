@@ -62,16 +62,16 @@ def stat_transform(item_loaded_data: dict) -> dict:
     return item_loaded_data
 
 def get_item_data(item_path) -> dict:
-    item_soup = BeautifulSoup(requests.get(item_path).text)
+    item_soup = BeautifulSoup(requests.get(item_path).text, features="lxml")
     item_data = item_soup.find("script", string=re.compile(";var R.*")).text
     return stat_transform(process_data(item_data))
 
 def main():
     items = []
-    item_page = BeautifulSoup(requests.get(f"{MAIN_URL}/przedmioty/").text)
+    item_page = BeautifulSoup(requests.get(f"{MAIN_URL}/przedmioty/").text, features="lxml")
     pbar = tqdm(item_page.find_all("a", {"href": re.compile("\/przedmioty\/dla.*")}))
     for element_index, element_a in enumerate(pbar):
-        soup_items = BeautifulSoup(requests.get(MAIN_URL + element_a['href']).text)
+        soup_items = BeautifulSoup(requests.get(MAIN_URL + element_a['href']).text, features="lxml")
         items_tags = soup_items.find_all("a", {"href": re.compile("\/przedmiot\/.*")})
         for item_index, item in enumerate(items_tags[:1]):
             pbar.set_description(f"Profession: {element_a['href'].split('/')[-2]}, Item Type: {element_a.text}, Item count: {item_index+1}/{len(items_tags)}")
