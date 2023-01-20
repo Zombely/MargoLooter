@@ -110,6 +110,21 @@ def get_item_data(item_path: str) -> dict:
     item_data = item_soup.find("script", string=re.compile(";var R.*")).text
     return stat_transform(process_data(item_data))
 
+def get_other_items(listing_soup: BeautifulSoup, main_list: List[dict], element_type: str) -> None:
+    """Get other elements than eq items. iterate through listing and get data
+
+    Args:
+        listing_soup (BeautifulSoup): Soup with listing of items
+        main_list (List[dict]): Main list containing result to append
+        element_type (str): type of element added
+    """
+    for item in set(listing_soup.find_all("a", {"href": re.compile("\/przedmiot\/.*")})):
+        time.sleep(1)
+        data_dict = get_item_data(MAIN_URL+item['href'])
+        data_dict['item']['type'] = element_type
+        main_list.append(data_dict)
+    return
+
 def main() -> None:
     """Main function for retriving data from `http://emargo.pl`, iterates through item types and items of given type.
     Saves results to `emargo.json` file
@@ -117,10 +132,9 @@ def main() -> None:
     """
     items = []
     # start from page of item types
-    item_page = BeautifulSoup(requests.get(f"{MAIN_URL}/przedmioty/").text, features="lxml")
-    pbar = tqdm(item_page.find_all("a", {"href": re.compile("\/przedmioty\/dla.*")}))
-    
+    item_types_page = BeautifulSoup(requests.get(f"{MAIN_URL}/przedmioty/").text, features="lxml")
     # iterate through links of items types
+    pbar = tqdm(item_types_page.find_all("a", {"href": re.compile("\/przedmioty\/dla.*")}))
     for element_index, element_a in enumerate(pbar):
         items_list_request = requests.get(MAIN_URL + element_a['href'])
         if items_list_request.status_code != 200:
@@ -132,10 +146,26 @@ def main() -> None:
         # get data from items of given type
         for item_index, item in enumerate(items_tags):
             pbar.set_description(f"Profession: {element_a['href'].split('/')[-2]}, Item Type: {element_a.text}, Item count: {item_index+1}/{len(items_tags)}")
-            time.sleep(0.5)
+            time.sleep(1)
             data_dict = get_item_data(MAIN_URL + item['href'])
             data_dict['item']['type'] = element_a.text
             items.append(data_dict)
+
+    # get other items than equipment
+    pbar_other = tqdm(item_types_page.find_all("a", {"href": re.compile("\/przedmioty\/(?!dla).*")})[:1])
+    for element in pbar_other:
+        time.sleep(1)
+        type_listing = BeautifulSoup(requests.get(MAIN_URL+element['href']).text, features="lxml")
+        max_page_number = type_listing.find("span", {"class": "last"}).find("a")['href'].split("-")[-1]
+        # get first page
+        get_other_items(type_listing, items, element.text)
+            
+        # get next pages
+        for page_number in range(2, int(max_page_number)+1):
+            time.sleep(1)
+            other_page = BeautifulSoup(requests.get(f"{MAIN_URL}{element['href']}/strona-{page_number}").text, features="lxml")
+            get_other_items(other_page, items, element.text)
+
     
     # save to json file
     with open("emargo.json", "w", encoding='utf-8') as f:
