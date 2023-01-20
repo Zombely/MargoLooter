@@ -62,7 +62,11 @@ def stat_transform(item_loaded_data: dict) -> dict:
     return item_loaded_data
 
 def get_item_data(item_path) -> dict:
-    item_soup = BeautifulSoup(requests.get(item_path).text, features="lxml")
+    item_page_request = requests.get(item_path)
+    if item_page_request.status_code != 200:
+        time.sleep(20)
+        item_page_request = requests.get(item_path)
+    item_soup = BeautifulSoup(item_page_request.text, features="lxml")
     item_data = item_soup.find("script", string=re.compile(";var R.*")).text
     return stat_transform(process_data(item_data))
 
@@ -71,7 +75,11 @@ def main():
     item_page = BeautifulSoup(requests.get(f"{MAIN_URL}/przedmioty/").text, features="lxml")
     pbar = tqdm(item_page.find_all("a", {"href": re.compile("\/przedmioty\/dla.*")}))
     for element_index, element_a in enumerate(pbar):
-        soup_items = BeautifulSoup(requests.get(MAIN_URL + element_a['href']).text, features="lxml")
+        items_list_request = requests.get(MAIN_URL + element_a['href'])
+        if items_list_request.status_code != 200:
+            time.sleep(20)
+            items_list_request = requests.get(MAIN_URL + element_a['href'])
+        soup_items = BeautifulSoup(items_list_request.text, features="lxml")
         items_tags = soup_items.find_all("a", {"href": re.compile("\/przedmiot\/.*")})
         for item_index, item in enumerate(items_tags):
             pbar.set_description(f"Profession: {element_a['href'].split('/')[-2]}, Item Type: {element_a.text}, Item count: {item_index+1}/{len(items_tags)}")
